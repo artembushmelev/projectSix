@@ -1,32 +1,61 @@
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.scss";
-import { useDispatch, useSelector } from "react-redux";
-import { AppStateType } from "./store/store";
-import { CountStateType, DecrimentAC, IncrementAC } from "./countReducerRedux";
+import { Users } from "./components/Users/Users";
+import { Success } from "./components/Success";
+
+// Тут список пользователей: https://reqres.in/api/users
+
+export type UserType = {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  avatar: string;
+};
+
+export type ApiResponse = {
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+  data: UserType[];
+  support: {
+    url: string;
+    text: string;
+  };
+};
 
 function App() {
-  const counter = useSelector<AppStateType, CountStateType>((state) => state.count);
-  const dispath = useDispatch();
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [invites, setInvites] = useState([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [searchValue, setSearchValue] = useState<string>("");
 
-  const onClickPlus = () => {
-    dispath(IncrementAC());
-  };
-  const onClickMinus = () => {
-    dispath(DecrimentAC());
+  useEffect(() => {
+    fetch("https://reqres.in/api/users")
+      .then((res) => {
+        return res.json();
+      })
+      .then((data: ApiResponse) => {
+        setUsers(data.data);
+      })
+      .catch((err) => {
+        console.warn(err);
+        alert("Ошибка при получении пользователей");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  const onChangeTextHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(event.target.value);
   };
 
   return (
     <div className="App">
-      <div>
-        <h2>Счетчик:</h2>
-        <h1>{counter.count}</h1>
-        <button onClick={onClickMinus} className="minus">
-          - Минус
-        </button>
-        <button onClick={onClickPlus} className="plus">
-          Плюс +
-        </button>
-      </div>
+      <Users items={users} isLoading={isLoading} searchValue={searchValue} onChangeTextHandler={onChangeTextHandler} />
+      {/* <Success /> */}
     </div>
   );
 }
